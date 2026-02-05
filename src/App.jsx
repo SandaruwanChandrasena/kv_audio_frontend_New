@@ -45,6 +45,7 @@ export default function App() {
           <Route path="users" element={<AdminUsers />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="categories" element={<AdminCategories />} />
+          
         </Route>
 
         {/* 404 */}
