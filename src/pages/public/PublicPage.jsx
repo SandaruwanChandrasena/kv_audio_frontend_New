@@ -12,10 +12,10 @@ export default function PublicPage() {
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <Navbar />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-1 py-10">
         <Routes>
           <Route path="/" element={<Home />} />
-          {/* <Route path="/products" element={<Products />} /> */}
+          <Route path="/products" element={<Products />} />
           <Route path="/products/:key" element={<ProductDetails />} />
           <Route path="*" element={<div className="text-slate-500">Page not found</div>} />
         </Routes>
