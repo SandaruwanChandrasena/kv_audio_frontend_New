@@ -6,10 +6,10 @@ const DATA = [
   {
     name: "Chalana",
     title: "Batch Party",
-    quote:
-      "Saved our batch party! The bass was insane and pickup was super easy.",
+    quote: "Saved our batch party! The bass was insane and pickup was super easy.",
     rating: 5,
     tag: "Parties",
+    avatar: "https://i.pravatar.cc/120?img=12",
   },
   {
     name: "Nimali",
@@ -17,31 +17,56 @@ const DATA = [
     quote: "Clear sound and the mic was perfect. Setup guide helped a lot.",
     rating: 5,
     tag: "Meetings",
+    avatar: "https://i.pravatar.cc/120?img=47",
   },
   {
     name: "Sahan",
     title: "Live Music Night",
-    quote:
-      "Mixer and stands were in great condition. Smooth renting experience.",
+    quote: "Mixer and stands were in great condition. Smooth renting experience.",
     rating: 4,
     tag: "Live Music",
+    avatar: "https://i.pravatar.cc/120?img=33",
   },
 ];
 
 function Stars({ value = 5 }) {
   return (
-    <div
-      className="flex items-center gap-1"
-      aria-label={`${value} star rating`}
-    >
+    <div className="flex items-center gap-1" aria-label={`${value} star rating`}>
       {Array.from({ length: 5 }).map((_, i) => (
-        <span
-          key={i}
-          className={i < value ? "text-amber-500" : "text-slate-300"}
-        >
+        <span key={i} className={i < value ? "text-amber-500" : "text-slate-300"}>
           ★
         </span>
       ))}
+    </div>
+  );
+}
+
+function getInitials(name = "") {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] || "";
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+  return (first + last).toUpperCase();
+}
+
+function Avatar({ name, src }) {
+  const [imgOk, setImgOk] = useState(true);
+
+  const initials = getInitials(name);
+
+  return (
+    <div className="relative h-11 w-11 overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm">
+      {src && imgOk ? (
+        <img
+          src={src}
+          alt={`${name} profile`}
+          className="h-full w-full object-cover"
+          onError={() => setImgOk(false)}
+        />
+      ) : (
+        <div className="grid h-full w-full place-items-center bg-emerald-50 text-sm font-semibold text-emerald-700">
+          {initials}
+        </div>
+      )}
     </div>
   );
 }
@@ -50,10 +75,15 @@ function TestimonialCard({ t }) {
   return (
     <div className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-sm font-semibold text-slate-900">{t.name}</div>
-          <div className="text-xs text-slate-500">{t.title}</div>
+        <div className="flex items-center gap-3">
+          <Avatar name={t.name} src={t.avatar} />
+
+          <div>
+            <div className="text-sm font-semibold text-slate-900">{t.name}</div>
+            <div className="text-xs text-slate-500">{t.title}</div>
+          </div>
         </div>
+
         <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
           {t.tag}
         </span>
@@ -74,8 +104,8 @@ export default function Testimonials() {
   const [index, setIndex] = useState(0);
 
   const max = DATA.length;
-
   const current = useMemo(() => DATA[index], [index]);
+
   const prevDisabled = index === 0;
   const nextDisabled = index === max - 1;
 
@@ -97,7 +127,7 @@ export default function Testimonials() {
           <button
             onClick={goPrev}
             disabled={prevDisabled}
-            className={`h-10 w-10 rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50`}
+            className="h-10 w-10 rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Previous testimonial"
           >
             ←
@@ -105,7 +135,7 @@ export default function Testimonials() {
           <button
             onClick={goNext}
             disabled={nextDisabled}
-            className={`h-10 w-10 rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50`}
+            className="h-10 w-10 rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Next testimonial"
           >
             →
@@ -120,7 +150,7 @@ export default function Testimonials() {
         ))}
       </div>
 
-      {/* Mobile: simple slider (no libs) */}
+      {/* Mobile: simple slider */}
       <div className="md:hidden">
         <TestimonialCard t={current} />
 
@@ -161,11 +191,11 @@ export default function Testimonials() {
 
           <div className="flex flex-col gap-2 sm:flex-row">
             <Link to="/products">
-              <Button className="px-6 w-full sm:w-auto">Browse Products</Button>
+              <Button className="w-full px-6 sm:w-auto">Browse Products</Button>
             </Link>
 
             <a href="tel:+94771234567" className="w-full sm:w-auto">
-              <Button variant="ghost" className="px-6 w-full">
+              <Button variant="ghost" className="w-full px-6">
                 Call Now
               </Button>
             </a>
@@ -176,7 +206,7 @@ export default function Testimonials() {
               rel="noopener noreferrer"
               className="w-full sm:w-auto"
             >
-              <Button variant="ghost" className="px-6 w-full">
+              <Button variant="ghost" className="w-full px-6">
                 WhatsApp
               </Button>
             </a>

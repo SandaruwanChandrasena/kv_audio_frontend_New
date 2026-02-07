@@ -42,9 +42,9 @@ export default function HeroSection() {
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3 text-sm text-slate-600">
-            <span className="rounded-full bg-slate-100 px-3 py-1">✔ Quality Checked</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1">✔ Easy Pickup</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1">✔ Flexible Pricing</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1"> Quality Checked</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1"> Easy Pickup</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1"> Flexible Pricing</span>
           </div>
         </div>
 

@@ -9,7 +9,7 @@ import ProductDetails from "./ProductDetails.jsx";
 
 export default function PublicPage() {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+    <div className="relative z-0 min-h-screen bg-transparent text-slate-900 flex flex-col">
       <Navbar />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-1 py-10">

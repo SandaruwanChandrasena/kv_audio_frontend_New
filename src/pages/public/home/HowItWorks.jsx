@@ -6,20 +6,57 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section className="mt-10">
-      <h2 className="text-xl font-semibold">How it works</h2>
-      <p className="mt-1 text-sm text-slate-500">Three simple steps, no confusion.</p>
+    <section className="mt-16">
+      <h2 className="text-2xl font-semibold text-slate-900">
+        How it works
+      </h2>
+      <p className="mt-2 max-w-md text-sm text-slate-500">
+        Three simple steps. No confusion. No paperwork drama.
+      </p>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
-        {steps.map((s) => (
-          <div key={s.num} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50 text-sm font-semibold text-emerald-700">
+      <div className="mt-10 grid gap-6 md:grid-cols-3">
+        {steps.map((s, i) => (
+          <div
+            key={s.num}
+            className="
+              group relative overflow-hidden rounded-2xl border border-white/40
+              bg-white/70 p-6 backdrop-blur-xl
+              shadow-sm transition
+              hover:-translate-y-1 hover:shadow-lg
+            "
+          >
+            {/* subtle gradient glow */}
+            <div
+              className="pointer-events-none absolute -inset-1 opacity-0 transition group-hover:opacity-100"
+              style={{
+                background:
+                  "radial-gradient(circle at top left, rgba(16,185,129,0.18), transparent 60%)",
+              }}
+            />
+
+            {/* step badge */}
+            <div className="relative z-10 flex items-center gap-4">
+              <div
+                className="
+                  grid h-10 w-10 place-items-center rounded-xl
+                  bg-emerald-600 text-sm font-semibold text-white
+                  shadow-md
+                "
+              >
                 {s.num}
               </div>
-              <div className="text-sm font-semibold">{s.title}</div>
+
+              <h3 className="text-sm font-semibold text-slate-900">
+                {s.title}
+              </h3>
             </div>
-            <p className="mt-3 text-sm text-slate-500">{s.desc}</p>
+
+            <p className="relative z-10 mt-4 text-sm leading-relaxed text-slate-600">
+              {s.desc}
+            </p>
+
+            {/* bottom accent line */}
+            <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-emerald-400/0 via-emerald-400/40 to-emerald-400/0" />
           </div>
         ))}
       </div>
