@@ -56,7 +56,7 @@ export default function HowItWorks() {
             </p>
 
             {/* bottom accent line */}
-            <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-emerald-400/0 via-emerald-400/40 to-emerald-400/0" />
+            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-linear-to-r from-emerald-400/0 via-emerald-400/40 to-emerald-400/0" />
           </div>
         ))}
       </div>

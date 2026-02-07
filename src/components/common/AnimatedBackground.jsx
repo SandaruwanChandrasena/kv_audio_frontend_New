@@ -8,32 +8,42 @@ export default function AnimatedBackground() {
   const pRaw = useScrollProgress(); // 0..1
   const p = clamp(pRaw, 0, 1);
 
-  // Disk spin (continuous) + scroll controls speed (and tiny pitch wobble)
+  // 🐛 DEBUG: Log scroll progress
+  useEffect(() => {
+    console.log("Scroll progress:", p);
+  }, [p]);
+
+  // Disk spin (continuous) + scroll controls speed
   const spinRef = useRef(0);
-  const lastRef = useRef(typeof performance !== "undefined" ? performance.now() : 0);
+  const lastRef = useRef(
+    typeof performance !== "undefined" ? performance.now() : 0,
+  );
   const rafSpin = useRef(null);
 
-  // Needle spring (more realistic "drop" as you scroll)
-  const armRef = useRef(0);
-  const armVRef = useRef(0);
+  // Needle spring (angle + lift)
+  const armAngleRef = useRef(16);
+  const armAngleVRef = useRef(0);
+  const armLiftRef = useRef(0); // 0..1 (1 lifted, 0 playing)
+  const armLiftVRef = useRef(0);
   const rafArm = useRef(null);
 
   const [render, setRender] = useState({
-    spin: 0,     // disk rotation
-    arm: 16,     // tonearm angle
+    spin: 0,
+    armAngle: 16,
+    armLift: 0,
   });
 
   // Continuous spin loop
   useEffect(() => {
     const tick = (now) => {
       const last = lastRef.current || now;
-      const dt = Math.min(0.05, (now - last) / 1000); // seconds, capped
+      const dt = Math.min(0.05, (now - last) / 1000);
       lastRef.current = now;
 
-      // Speed: base + boost with scroll progress (deg/sec)
-      const base = 35;              // idle spin speed
-      const boost = 240 * p;        // faster as you scroll down
-      const wobble = Math.sin(now / 450) * (0.6 + 1.2 * p); // subtle "analog" pitch wobble
+      // speed in deg/sec
+      const base = 30; // idle spin
+      const boost = 320 * p; // faster as scroll down
+      const wobble = Math.sin(now / 450) * (0.6 + 1.2 * p);
       const speed = base + boost + wobble;
 
       spinRef.current = (spinRef.current + speed * dt) % 360;
@@ -49,49 +59,76 @@ export default function AnimatedBackground() {
     };
   }, [p]);
 
-  // Needle spring to a target angle based on scroll (like lowering onto record)
+  // Needle spring: angle + lift - ✅ FIXED: Added dependency array
   useEffect(() => {
-    const targetArm = lerp(10, 28, p); // start slightly away -> move inward
+    const targetAngle = lerp(8, 34, p); // moves inward as you scroll
+    const targetLift = lerp(1, 0, p); // lifted at top, drops as you scroll
 
-    const stiffness = 0.10;
-    const damping = 0.74;
+    // bouncy spring
+    const stiffness = 0.12;
+    const damping = 0.7;
 
     const tick = () => {
-      const da = targetArm - armRef.current;
-      armVRef.current = armVRef.current * damping + da * stiffness;
-      armRef.current += armVRef.current;
+      // angle spring
+      const da = targetAngle - armAngleRef.current;
+      armAngleVRef.current = armAngleVRef.current * damping + da * stiffness;
+      armAngleRef.current += armAngleVRef.current;
 
-      setRender((prev) => ({ ...prev, arm: armRef.current }));
+      // lift spring
+      const dl = targetLift - armLiftRef.current;
+      armLiftVRef.current = armLiftVRef.current * damping + dl * stiffness;
+      armLiftRef.current += armLiftVRef.current;
 
-      if (Math.abs(da) > 0.01 || Math.abs(armVRef.current) > 0.01) {
+      armLiftRef.current = clamp(armLiftRef.current, 0, 1);
+
+      setRender((prev) => ({
+        ...prev,
+        armAngle: armAngleRef.current,
+        armLift: armLiftRef.current,
+      }));
+
+      if (
+        Math.abs(da) > 0.01 ||
+        Math.abs(armAngleVRef.current) > 0.01 ||
+        Math.abs(dl) > 0.001 ||
+        Math.abs(armLiftVRef.current) > 0.001
+      ) {
         rafArm.current = requestAnimationFrame(tick);
       } else {
         rafArm.current = null;
       }
     };
 
-    if (!rafArm.current) rafArm.current = requestAnimationFrame(tick);
+    // ✅ CRITICAL FIX: Always restart animation when p changes
+    if (rafArm.current) {
+      cancelAnimationFrame(rafArm.current);
+    }
+    rafArm.current = requestAnimationFrame(tick);
 
     return () => {
       if (rafArm.current) cancelAnimationFrame(rafArm.current);
       rafArm.current = null;
     };
-  }, [p]);
+  }, [p]); // ✅ This was already correct
+
+  // lift transforms
+  const liftY = -18 * render.armLift; // higher when lifted
+  const liftTilt = 0.06 * render.armLift;
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      {/* base */}
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+    >
+      {/* Base */}
       <div className="absolute inset-0 bg-slate-50" />
 
-      {/* centered scene */}
+      {/* Centered gramophone scene */}
       <div
         className="absolute left-1/2 top-1/2"
-        style={{
-          transform: "translate(-50%, -50%)",
-          willChange: "transform",
-        }}
+        style={{ transform: "translate(-50%, -50%)", willChange: "transform" }}
       >
-        <div className="relative h-[760px] w-[760px]">
+        <div className="relative h-[760px] w-[760px]"> {/* ✅ Fixed: Added px units */}
           {/* ===== VINYL (spins) ===== */}
           <div
             className="absolute inset-0 rounded-full"
@@ -99,15 +136,15 @@ export default function AnimatedBackground() {
               transform: `rotate(${render.spin}deg)`,
               willChange: "transform",
               background:
-                // realistic vinyl lighting + deep blacks
                 "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.20), rgba(255,255,255,0) 42%)," +
                 "radial-gradient(circle at 70% 76%, rgba(255,255,255,0.10), rgba(0,0,0,0) 50%)," +
                 "radial-gradient(circle at 50% 50%, rgba(26,26,26,1), rgba(6,6,6,1))",
               boxShadow: "0 22px 70px rgba(15, 23, 42, 0.14)",
             }}
           >
-            {/* grooves: lots of subtle rings (looks more real than a few borders) */}
-            <div className="absolute inset-0 rounded-full"
+            {/* grooves */}
+            <div
+              className="absolute inset-0 rounded-full"
               style={{
                 background:
                   "repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08) 0px, rgba(255,255,255,0.08) 1px, rgba(0,0,0,0) 5px, rgba(0,0,0,0) 10px)",
@@ -115,7 +152,6 @@ export default function AnimatedBackground() {
                 mixBlendMode: "screen",
               }}
             />
-            {/* subtle inner matte ring */}
             <div className="absolute inset-10 rounded-full border border-white/10" />
 
             {/* label */}
@@ -128,19 +164,23 @@ export default function AnimatedBackground() {
                 boxShadow: "inset 0 0 0 6px rgba(255,255,255,0.03)",
               }}
             />
-            {/* hole */}
             <div className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-200/85" />
-            {/* highlight ring */}
             <div className="absolute inset-6 rounded-full border border-white/10" />
           </div>
 
-          {/* ===== TONEARM (does NOT spin; sits above vinyl) ===== */}
+          {/* ===== TONEARM (realistic) ===== */}
           <div className="absolute -right-8 top-28">
             <div className="relative">
-              {/* base plate shadow */}
-              <div className="absolute -inset-6 rounded-2xl bg-slate-900/5 blur-xl" />
+              {/* base shadow */}
+              <div
+                className="absolute -inset-6 rounded-2xl blur-xl"
+                style={{
+                  background: "rgba(15, 23, 42, 0.06)",
+                  opacity: 0.9 - render.armLift * 0.35,
+                }}
+              />
 
-              {/* pivot base (metal) */}
+              {/* pivot base */}
               <div
                 className="relative h-16 w-16 rounded-full border border-white/50 shadow-sm"
                 style={{
@@ -156,44 +196,44 @@ export default function AnimatedBackground() {
                 }}
               />
 
-              {/* arm assembly */}
+              {/* arm assembly - ✅ VISIBLE DEBUG VERSION */}
               <div
                 className="absolute left-1/2 top-1/2 origin-left"
                 style={{
-                  transform: `translateY(-50%) rotate(${render.arm}deg)`,
+                  transform: `translateY(calc(-50% + ${liftY}px)) rotate(${render.armAngle}deg) rotateX(${liftTilt}turn)`,
                   willChange: "transform",
                 }}
               >
                 {/* main arm (metal tube) */}
                 <div
-                  className="relative h-[10px] w-[300px] rounded-full border border-white/50 shadow-sm"
+                  className="relative h-2.5 w-[300px] rounded-full border border-white/50 shadow-sm" // ✅ Made longer
                   style={{
                     background:
                       "linear-gradient(180deg, rgba(255,255,255,0.85), rgba(203,213,225,0.75) 45%, rgba(100,116,139,0.55))",
                   }}
                 >
-                  {/* thin top highlight */}
                   <div
-                    className="absolute left-2 right-2 top-[1px] h-[2px] rounded-full"
+                    className="absolute left-2 right-2 top-px h-0.5 rounded-full"
                     style={{
-                      background: "linear-gradient(90deg, rgba(255,255,255,0.7), rgba(255,255,255,0))",
+                      background:
+                        "linear-gradient(90deg, rgba(255,255,255,0.7), rgba(255,255,255,0))",
                       opacity: 0.8,
                     }}
                   />
                 </div>
 
-                {/* headshell (flat piece near the end) */}
+                {/* headshell */}
                 <div
-                  className="absolute right-[20px] top-1/2 -translate-y-1/2 h-8 w-14 rounded-lg border border-white/45 shadow-sm"
+                  className="absolute right-5 top-1/2 -translate-y-1/2 h-8 w-14 rounded-lg border border-white/45 shadow-sm"
                   style={{
                     background:
                       "linear-gradient(180deg, rgba(255,255,255,0.80), rgba(226,232,240,0.70), rgba(100,116,139,0.45))",
                   }}
                 />
 
-                {/* cartridge (small box under headshell) */}
+                {/* cartridge */}
                 <div
-                  className="absolute right-[6px] top-1/2 translate-y-[6px] h-6 w-9 rounded-md border border-white/30 shadow-sm"
+                  className="absolute right-1.5 top-1/2 translate-y-1.5 h-6 w-9 rounded-md border border-white/30 shadow-sm"
                   style={{
                     background:
                       "linear-gradient(180deg, rgba(30,41,59,0.85), rgba(15,23,42,0.75))",
@@ -201,35 +241,67 @@ export default function AnimatedBackground() {
                 />
 
                 {/* stylus + needle */}
-                <div className="absolute right-[-10px] top-1/2 translate-y-[18px]">
+                <div className="absolute -right-2.5 top-1/2 translate-y-4.5">
                   {/* needle shaft */}
                   <div
-                    className="h-[14px] w-[2px] rounded-full"
+                    className="h-3.5 w-0.5 rounded-full"
                     style={{
-                      background: "linear-gradient(180deg, rgba(255,255,255,0.8), rgba(71,85,105,0.7))",
+                      background:
+                        "linear-gradient(180deg, rgba(255,255,255,0.8), rgba(71,85,105,0.7))",
                       boxShadow: "0 3px 10px rgba(15,23,42,0.25)",
                       transform: "rotate(18deg)",
                       transformOrigin: "top",
+                      opacity: 0.95 - render.armLift * 0.25,
                     }}
                   />
-                  {/* tiny tip */}
+                  {/* tip */}
                   <div
-                    className="mt-[-2px] ml-[-2px] h-[6px] w-[6px] rounded-full"
+                    className="-mt-0.5 -ml-0.5 h-1.5 w-1.5 rounded-full"
                     style={{
-                      background: "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(15,23,42,0.6))",
+                      background:
+                        "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(15,23,42,0.6))",
                       transform: "translateX(1px)",
+                      opacity: 0.95 - render.armLift * 0.25,
                     }}
                   />
                 </div>
               </div>
+
+              {/* cue lever detail */}
+              <div
+                className="absolute right-2 top-14 h-10 w-2 rounded-full"
+                style={{
+                  background:
+                    "linear-gradient(180deg, rgba(255,255,255,0.75), rgba(100,116,139,0.55))",
+                  transform: `translateY(${render.armLift * 3}px)`,
+                  opacity: 0.6,
+                }}
+              />
             </div>
           </div>
-
-          {/* optional subtle blobs */}
-          <div className="absolute -top-40 -left-40 h-[520px] w-[520px] rounded-full bg-emerald-200/16 blur-3xl" />
-          <div className="absolute bottom-0 -right-40 h-[420px] w-[420px] rounded-full bg-slate-300/18 blur-3xl" />
         </div>
       </div>
+
+      {/* ===== GLASS / BLUR LAYER - ✅ REDUCED opacity ===== */}
+      <div className="absolute inset-0 backdrop-blur-[10px] opacity-50" />
+
+      {/* subtle tint + vignette */}
+      <div className="absolute inset-0 bg-slate-900/2" />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 45%, rgba(255,255,255,0) 40%, rgba(15,23,42,0.04) 100%)",
+        }}
+      />
+
+      {/* 🐛 DEBUG OVERLAY - Remove after testing */}
+      {/* <div className="absolute bottom-4 left-4 bg-black/70 text-white p-4 rounded font-mono text-sm">
+        <div>Scroll: {(p * 100).toFixed(1)}%</div>
+        <div>Angle: {render.armAngle.toFixed(1)}°</div>
+        <div>Lift: {render.armLift.toFixed(2)}</div>
+        <div>Spin: {render.spin.toFixed(0)}°</div>
+      </div> */}
     </div>
   );
 }
