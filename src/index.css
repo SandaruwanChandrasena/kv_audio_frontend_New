@@ -1,2 +1,9 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+}
+
+:root {
+  scroll-padding-top: 80px; /* so section isn't hidden behind sticky navbar */
+}

@@ -76,7 +76,7 @@ export default function PopularProducts() {
   }, []);
 
   return (
-    <section className="mt-10">
+    <section id="popular-products" className="mt-10">
       <div className="mb-4 flex items-end justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">Popular rentals</h2>
@@ -85,7 +85,7 @@ export default function PopularProducts() {
           </p>
         </div>
 
-        <Link
+        <Link 
           to="/products"
           className="text-sm font-medium text-emerald-700 hover:text-emerald-800"
         >

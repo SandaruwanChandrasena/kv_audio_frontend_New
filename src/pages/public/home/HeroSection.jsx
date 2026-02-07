@@ -18,25 +18,32 @@ export default function HeroSection() {
           </h1>
 
           <p className="mt-4 max-w-xl text-slate-500">
-            Speakers, microphones, mixers, and everything you need for parties, events,
-            meetings, and live music — with clear pricing and availability.
+            Speakers, microphones, mixers, and everything you need for parties,
+            events, meetings, and live music — with clear pricing and
+            availability.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-3">
             <Link to="/products">
               <Button className="px-6">Browse Products</Button>
             </Link>
-            <Link to="/products">
+            <a href="#popular-products">
               <Button variant="ghost" className="px-6">
                 See Popular Gear
               </Button>
-            </Link>
+            </a>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3 text-sm text-slate-600">
-            <span className="rounded-full bg-slate-100 px-3 py-1">✔ Quality Checked</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1">✔ Easy Pickup</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1">✔ Flexible Pricing</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1">
+              ✔ Quality Checked
+            </span>
+            <span className="rounded-full bg-slate-100 px-3 py-1">
+              ✔ Easy Pickup
+            </span>
+            <span className="rounded-full bg-slate-100 px-3 py-1">
+              ✔ Flexible Pricing
+            </span>
           </div>
         </div>
 
