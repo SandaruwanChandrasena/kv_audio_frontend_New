@@ -1,11 +1,6 @@
 import api from "./client";
 
-export const getProducts = async (params = {}) => {
-  const { data } = await api.get("/products", { params });
-  return data;
-};
-
-export const getProductById = async (id) => {
-  const { data } = await api.get(`/products/${id}`);
-  return data;
+export const getProducts = async () => {
+  const { data } = await api.get("/products");
+  return data; // { message, count, products }
 };

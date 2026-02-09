@@ -1,25 +1,59 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { THEME } from "../../utils/theme.jsx";
 import Input from "../../components/common/Input.jsx";
 import Button from "../../components/common/Button.jsx";
+import { login } from "../../api/auth";
 
 export default function Login() {
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const onChange = (e) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    // TODO: login logic
-    console.log("login:", form);
+    setError("");
+    setLoading(true);
+
+    try {
+      const data = await login(form);
+
+      // ✅ save token so future requests include it
+      localStorage.setItem("token", data.token);
+
+      // (optional) store basic user info
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // ✅ if backend says restricted, you can show message (still logged in)
+      if (data.restricted) {
+        alert(data.restrictedMessage || "Your account is restricted.");
+      }
+
+      // ✅ route based on role
+      if (data.user?.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Login failed. Try again.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      {/* Overlay so AnimatedBackground doesn't overpower the UI */}
       <div className="fixed inset-0 bg-slate-950/10 backdrop-blur-[1px]" />
 
       <div className="relative w-full max-w-md">
@@ -36,6 +70,12 @@ export default function Login() {
               Welcome back — please sign in to continue.
             </p>
           </div>
+
+          {error ? (
+            <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {error}
+            </div>
+          ) : null}
 
           <form onSubmit={onSubmit} className="space-y-4">
             <Input
@@ -76,8 +116,13 @@ export default function Login() {
               </button>
             </div>
 
-            <Button type="submit" variant="primary" className="w-full">
-              Sign in
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-full"
+              disabled={loading}
+            >
+              {loading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
 
@@ -92,7 +137,6 @@ export default function Login() {
           </div>
         </div>
 
-        {/* small footer under card */}
         <p className="mt-4 text-center text-xs text-slate-700/70">
           © {new Date().getFullYear()} Your App
         </p>

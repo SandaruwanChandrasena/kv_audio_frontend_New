@@ -1,9 +1,9 @@
 import api from "./client";
 
-export async function login(payload) {
-  const { data } = await api.post("/auth/login", payload);
-  return data;
-}
+export const login = async (payload) => {
+  const { data } = await api.post("/users/login", payload);
+  return data; // { token, user, restricted, ... }
+};
 
 export async function register(payload) {
   const { data } = await api.post("/auth/register", payload);
