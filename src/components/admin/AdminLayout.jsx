@@ -1,6 +1,7 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { ADMIN_THEME } from "../../utils/adminTheme.jsx";
 import AdminButton from "./AdminButton.jsx";
+import api from "../../api/client"; // ✅ uses token from localStorage
 
 function Item({ to, label }) {
   return (
@@ -10,7 +11,9 @@ function Item({ to, label }) {
       className={({ isActive }) =>
         [
           "block rounded-xl px-3 py-2 text-sm font-medium transition",
-          isActive ? "bg-emerald-500/15 text-emerald-300" : "text-slate-200 hover:bg-slate-800",
+          isActive
+            ? "bg-emerald-500/15 text-emerald-300"
+            : "text-slate-200 hover:bg-slate-800",
         ].join(" ")
       }
     >
@@ -20,6 +23,22 @@ function Item({ to, label }) {
 }
 
 export default function AdminLayout() {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      // ✅ call backend logout (optional but good)
+      await api.post("/users/logout");
+    } catch (e) {
+      // even if logout fails, clear local token anyway
+      console.warn("Logout request failed:", e?.response?.data || e.message);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/login");
+    }
+  };
+
   return (
     <div className={ADMIN_THEME.page}>
       <div className="flex min-h-screen">
@@ -34,12 +53,16 @@ export default function AdminLayout() {
             <Item to="/admin" label="Dashboard" />
             <Item to="/admin/users" label="Users" />
             <Item to="/admin/products" label="Products" />
+
+            {/* ✅ NEW: Categories */}
+            <Item to="/admin/categories" label="Categories" />
+
             <Item to="/admin/rentals" label="Rentals" />
             <Item to="/admin/returns" label="Returns" />
           </nav>
 
-          <div className="mt-auto p-4 border-t border-slate-800">
-            <AdminButton variant="ghost" className="w-full">
+          <div className={`mt-auto p-4 border-t ${ADMIN_THEME.divider}`}>
+            <AdminButton variant="ghost" className="w-full" onClick={handleLogout}>
               Logout
             </AdminButton>
           </div>
@@ -48,7 +71,9 @@ export default function AdminLayout() {
         {/* Main */}
         <div className="flex-1">
           {/* Topbar */}
-          <header className={`sticky top-0 z-20 border-b ${ADMIN_THEME.divider} bg-slate-950/70 backdrop-blur`}>
+          <header
+            className={`sticky top-0 z-20 border-b ${ADMIN_THEME.divider} bg-slate-950/70 backdrop-blur`}
+          >
             <div className={`${ADMIN_THEME.container} flex items-center justify-between py-3`}>
               <div>
                 <div className="text-sm font-semibold">Admin Dashboard</div>

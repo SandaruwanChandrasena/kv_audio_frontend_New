@@ -4,6 +4,7 @@ import AdminLayout from "../../components/admin/AdminLayout.jsx";
 import Dashboard from "./Dashboard.jsx";
 import Users from "./Users.jsx";
 import Products from "./Products.jsx";
+import Categories from "./Categories.jsx";
 
 function Rentals() {
   return <div>Rentals (coming soon)</div>;
@@ -18,6 +19,7 @@ export default function AdminPage() {
       <Route element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="users" element={<Users />} />
+        <Route path="categories" element={<Categories />} />
         <Route path="products" element={<Products />} />
         <Route path="rentals" element={<Rentals />} />
         <Route path="returns" element={<Returns />} />
