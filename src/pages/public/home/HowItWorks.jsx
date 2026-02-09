@@ -10,7 +10,7 @@ export default function HowItWorks() {
       <h2 className="text-2xl font-semibold text-slate-900">
         How it works
       </h2>
-      <p className="text-sm text-blue-600 border p-1 rounded-xl bg-blue-100 inline-block mt-1">
+      <p className="rounded-full border border-emerald-200 bg-emerald-50 text-xs font-medium text-emerald-700 inline-block mt-1 px-2 py-1">
         Three simple steps. No confusion. No paperwork drama.
       </p>
 

@@ -117,7 +117,7 @@ export default function Testimonials() {
       <div className="mb-4 flex items-end justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">What people say</h2>
-          <p className="text-sm text-blue-600 border p-1 rounded-xl bg-blue-100 inline-block mt-1">
+          <p className="rounded-full border border-emerald-200 bg-emerald-50 text-xs font-medium text-emerald-700 px-2 py-1">
             Real feedback builds trust — especially for rentals.
           </p>
         </div>
