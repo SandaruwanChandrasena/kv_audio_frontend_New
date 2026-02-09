@@ -2,12 +2,17 @@
 import { useEffect, useRef, useState } from "react";
 import useScrollProgress from "../../hooks/useScrollProgress";
 
-const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+// ✅ helpers (define ONCE, outside component)
+const clamp = (n, a, b) => {
+  if (!Number.isFinite(n)) return a;
+  return Math.max(a, Math.min(b, n));
+};
+
 const lerp = (a, b, t) => a + (b - a) * t;
 
 export default function AnimatedBackground() {
-  const pRaw = useScrollProgress(); // 0..1
-  const p = clamp(pRaw, 0, 1);
+  const pRaw = useScrollProgress(); // can be undefined/NaN briefly
+  const p = clamp(Number.isFinite(pRaw) ? pRaw : 0, 0, 1);
 
   // Disk spin (continuous) + scroll controls speed
   const spinRef = useRef(0);
@@ -52,16 +57,16 @@ export default function AnimatedBackground() {
     };
   }, [p]);
 
-  // ✅ Tonearm spring loop (continuous, feels premium)
+  // Tonearm spring loop
   useEffect(() => {
     let rafId;
 
     const stiffness = 0.10; // smooth
-    const damping = 0.78;   // stable
+    const damping = 0.78; // stable
 
     const tick = () => {
       const targetAngle = lerp(10, 34, p); // inward as scroll
-      const targetLift = lerp(1, 0, p);    // lifted at top, down at bottom
+      const targetLift = lerp(1, 0, p); // lifted at top, down at bottom
 
       // angle spring
       const da = targetAngle - armAngleRef.current;
@@ -89,8 +94,8 @@ export default function AnimatedBackground() {
   }, [p]);
 
   // lift transforms (visible)
-  const liftY = -18 * render.armLift;      // higher when lifted
-  const liftTilt = 12 * render.armLift;   // degrees
+  const liftY = -18 * render.armLift; // higher when lifted
+  const liftTilt = 12 * render.armLift; // degrees
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
@@ -150,7 +155,7 @@ export default function AnimatedBackground() {
                 className="absolute -inset-6 rounded-2xl blur-xl"
                 style={{
                   background: "rgba(15, 23, 42, 0.06)",
-                  opacity: 0.9 - render.armLift * 0.35,
+                  opacity: clamp(0.9 - render.armLift * 0.35, 0, 1),
                 }}
               />
 
@@ -211,7 +216,7 @@ export default function AnimatedBackground() {
                   style={{
                     background:
                       "linear-gradient(180deg, rgba(30,41,59,0.85), rgba(15,23,42,0.75))",
-                    opacity: 0.95 - render.armLift * 0.25,
+                    opacity: clamp(0.95 - render.armLift * 0.25, 0, 1),
                   }}
                 />
 
@@ -225,7 +230,7 @@ export default function AnimatedBackground() {
                       boxShadow: "0 3px 10px rgba(15,23,42,0.25)",
                       transform: "rotate(18deg)",
                       transformOrigin: "top",
-                      opacity: 0.95 - render.armLift * 0.25,
+                      opacity: clamp(0.95 - render.armLift * 0.25, 0, 1),
                     }}
                   />
                   <div
@@ -234,7 +239,7 @@ export default function AnimatedBackground() {
                       background:
                         "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(15,23,42,0.6))",
                       transform: "translateX(1px)",
-                      opacity: 0.95 - render.armLift * 0.25,
+                      opacity: clamp(0.95 - render.armLift * 0.25, 0, 1),
                     }}
                   />
                 </div>
@@ -255,7 +260,7 @@ export default function AnimatedBackground() {
         </div>
       </div>
 
-      {/* Glass / blur layer (lighter) */}
+      {/* Glass / blur layer */}
       <div className="absolute inset-0 backdrop-blur-[2px]" />
 
       {/* subtle tint + vignette */}
