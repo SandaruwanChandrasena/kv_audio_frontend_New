@@ -10,7 +10,7 @@ export default function HowItWorks() {
       <h2 className="text-2xl font-semibold text-slate-900">
         How it works
       </h2>
-      <p className="mt-2 max-w-md text-sm text-slate-500">
+      <p className="text-sm text-blue-600 border p-1 rounded-xl bg-blue-100 inline-block mt-1">
         Three simple steps. No confusion. No paperwork drama.
       </p>
 

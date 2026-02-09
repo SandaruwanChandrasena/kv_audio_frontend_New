@@ -1,3 +1,4 @@
+// src/components/common/AnimatedBackground.jsx
 import { useEffect, useRef, useState } from "react";
 import useScrollProgress from "../../hooks/useScrollProgress";
 
@@ -8,16 +9,9 @@ export default function AnimatedBackground() {
   const pRaw = useScrollProgress(); // 0..1
   const p = clamp(pRaw, 0, 1);
 
-  // 🐛 DEBUG: Log scroll progress
-  useEffect(() => {
-    console.log("Scroll progress:", p);
-  }, [p]);
-
   // Disk spin (continuous) + scroll controls speed
   const spinRef = useRef(0);
-  const lastRef = useRef(
-    typeof performance !== "undefined" ? performance.now() : 0,
-  );
+  const lastRef = useRef(typeof performance !== "undefined" ? performance.now() : 0);
   const rafSpin = useRef(null);
 
   // Needle spring (angle + lift)
@@ -25,7 +19,6 @@ export default function AnimatedBackground() {
   const armAngleVRef = useRef(0);
   const armLiftRef = useRef(0); // 0..1 (1 lifted, 0 playing)
   const armLiftVRef = useRef(0);
-  const rafArm = useRef(null);
 
   const [render, setRender] = useState({
     spin: 0,
@@ -59,16 +52,17 @@ export default function AnimatedBackground() {
     };
   }, [p]);
 
-  // Needle spring: angle + lift - ✅ FIXED: Added dependency array
+  // ✅ Tonearm spring loop (continuous, feels premium)
   useEffect(() => {
-    const targetAngle = lerp(8, 34, p); // moves inward as you scroll
-    const targetLift = lerp(1, 0, p); // lifted at top, drops as you scroll
+    let rafId;
 
-    // bouncy spring
-    const stiffness = 0.12;
-    const damping = 0.7;
+    const stiffness = 0.10; // smooth
+    const damping = 0.78;   // stable
 
     const tick = () => {
+      const targetAngle = lerp(10, 34, p); // inward as scroll
+      const targetLift = lerp(1, 0, p);    // lifted at top, down at bottom
+
       // angle spring
       const da = targetAngle - armAngleRef.current;
       armAngleVRef.current = armAngleVRef.current * damping + da * stiffness;
@@ -87,48 +81,28 @@ export default function AnimatedBackground() {
         armLift: armLiftRef.current,
       }));
 
-      if (
-        Math.abs(da) > 0.01 ||
-        Math.abs(armAngleVRef.current) > 0.01 ||
-        Math.abs(dl) > 0.001 ||
-        Math.abs(armLiftVRef.current) > 0.001
-      ) {
-        rafArm.current = requestAnimationFrame(tick);
-      } else {
-        rafArm.current = null;
-      }
+      rafId = requestAnimationFrame(tick);
     };
 
-    // ✅ CRITICAL FIX: Always restart animation when p changes
-    if (rafArm.current) {
-      cancelAnimationFrame(rafArm.current);
-    }
-    rafArm.current = requestAnimationFrame(tick);
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [p]);
 
-    return () => {
-      if (rafArm.current) cancelAnimationFrame(rafArm.current);
-      rafArm.current = null;
-    };
-  }, [p]); // ✅ This was already correct
-
-  // lift transforms
-  const liftY = -18 * render.armLift; // higher when lifted
-  const liftTilt = 0.06 * render.armLift;
+  // lift transforms (visible)
+  const liftY = -18 * render.armLift;      // higher when lifted
+  const liftTilt = 12 * render.armLift;   // degrees
 
   return (
-    <div
-      aria-hidden
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
-    >
+    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       {/* Base */}
       <div className="absolute inset-0 bg-slate-50" />
 
-      {/* Centered gramophone scene */}
+      {/* Centered turntable scene */}
       <div
         className="absolute left-1/2 top-1/2"
         style={{ transform: "translate(-50%, -50%)", willChange: "transform" }}
       >
-        <div className="relative h-[760px] w-[760px]"> {/* ✅ Fixed: Added px units */}
+        <div className="relative h-190 w-190">
           {/* ===== VINYL (spins) ===== */}
           <div
             className="absolute inset-0 rounded-full"
@@ -168,7 +142,7 @@ export default function AnimatedBackground() {
             <div className="absolute inset-6 rounded-full border border-white/10" />
           </div>
 
-          {/* ===== TONEARM (realistic) ===== */}
+          {/* ===== TONEARM ===== */}
           <div className="absolute -right-8 top-28">
             <div className="relative">
               {/* base shadow */}
@@ -196,17 +170,17 @@ export default function AnimatedBackground() {
                 }}
               />
 
-              {/* arm assembly - ✅ VISIBLE DEBUG VERSION */}
+              {/* arm assembly */}
               <div
                 className="absolute left-1/2 top-1/2 origin-left"
                 style={{
-                  transform: `translateY(calc(-50% + ${liftY}px)) rotate(${render.armAngle}deg) rotateX(${liftTilt}turn)`,
+                  transform: `translateY(calc(-50% + ${liftY}px)) rotate(${render.armAngle}deg) perspective(900px) rotateX(${liftTilt}deg)`,
                   willChange: "transform",
                 }}
               >
-                {/* main arm (metal tube) */}
+                {/* main arm */}
                 <div
-                  className="relative h-2.5 w-[300px] rounded-full border border-white/50 shadow-sm" // ✅ Made longer
+                  className="relative h-2.5 w-75 rounded-full border border-white/50 shadow-sm"
                   style={{
                     background:
                       "linear-gradient(180deg, rgba(255,255,255,0.85), rgba(203,213,225,0.75) 45%, rgba(100,116,139,0.55))",
@@ -237,12 +211,12 @@ export default function AnimatedBackground() {
                   style={{
                     background:
                       "linear-gradient(180deg, rgba(30,41,59,0.85), rgba(15,23,42,0.75))",
+                    opacity: 0.95 - render.armLift * 0.25,
                   }}
                 />
 
-                {/* stylus + needle */}
+                {/* stylus */}
                 <div className="absolute -right-2.5 top-1/2 translate-y-4.5">
-                  {/* needle shaft */}
                   <div
                     className="h-3.5 w-0.5 rounded-full"
                     style={{
@@ -254,7 +228,6 @@ export default function AnimatedBackground() {
                       opacity: 0.95 - render.armLift * 0.25,
                     }}
                   />
-                  {/* tip */}
                   <div
                     className="-mt-0.5 -ml-0.5 h-1.5 w-1.5 rounded-full"
                     style={{
@@ -267,7 +240,7 @@ export default function AnimatedBackground() {
                 </div>
               </div>
 
-              {/* cue lever detail */}
+              {/* cue lever */}
               <div
                 className="absolute right-2 top-14 h-10 w-2 rounded-full"
                 style={{
@@ -282,8 +255,8 @@ export default function AnimatedBackground() {
         </div>
       </div>
 
-      {/* ===== GLASS / BLUR LAYER - ✅ REDUCED opacity ===== */}
-      <div className="absolute inset-0 backdrop-blur-[10px] opacity-50" />
+      {/* Glass / blur layer (lighter) */}
+      <div className="absolute inset-0 backdrop-blur-[2px]" />
 
       {/* subtle tint + vignette */}
       <div className="absolute inset-0 bg-slate-900/2" />
@@ -294,14 +267,6 @@ export default function AnimatedBackground() {
             "radial-gradient(circle at 50% 45%, rgba(255,255,255,0) 40%, rgba(15,23,42,0.04) 100%)",
         }}
       />
-
-      {/* 🐛 DEBUG OVERLAY - Remove after testing */}
-      {/* <div className="absolute bottom-4 left-4 bg-black/70 text-white p-4 rounded font-mono text-sm">
-        <div>Scroll: {(p * 100).toFixed(1)}%</div>
-        <div>Angle: {render.armAngle.toFixed(1)}°</div>
-        <div>Lift: {render.armLift.toFixed(2)}</div>
-        <div>Spin: {render.spin.toFixed(0)}°</div>
-      </div> */}
     </div>
   );
 }

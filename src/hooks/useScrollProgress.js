@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 
-export default function useScrollProgress() {
-  const [progress, setProgress] = useState(0);
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 
-  const target = useRef(0);
-  const current = useRef(0);
+export default function useScrollProgress() {
+  const [state, setState] = useState({ progress: 0, scrollY: 0 });
+
+  const targetP = useRef(0);
+  const currentP = useRef(0);
+
+  const targetY = useRef(0);
+  const currentY = useRef(0);
+
   const raf = useRef(null);
 
   useEffect(() => {
@@ -25,26 +31,26 @@ export default function useScrollProgress() {
     };
 
     const tick = () => {
-      // smoothing
-      current.current += (target.current - current.current) * 0.08;
-      setProgress(current.current);
+      // Smooth toward targets (spring-ish)
+      currentP.current += (targetP.current - currentP.current) * 0.10;
+      currentY.current += (targetY.current - currentY.current) * 0.12;
 
-      // keep animating until close enough
-      if (Math.abs(target.current - current.current) > 0.0005) {
-        raf.current = requestAnimationFrame(tick);
-      } else {
-        raf.current = null;
-      }
+      setState({
+        progress: currentP.current,
+        scrollY: currentY.current,
+      });
+
+      raf.current = requestAnimationFrame(tick);
     };
 
     const updateTarget = () => {
       const { scrollTop, height } = getScrollValues();
-
-      // IMPORTANT: if the page is short, height can be 0 and progress becomes stuck.
       const safeHeight = Math.max(height, 1);
 
-      target.current = scrollTop / safeHeight;
+      targetY.current = scrollTop;
+      targetP.current = clamp(scrollTop / safeHeight, 0, 1);
 
+      // ensure RAF loop is running
       if (!raf.current) raf.current = requestAnimationFrame(tick);
     };
 
@@ -52,16 +58,11 @@ export default function useScrollProgress() {
     scrollEl.addEventListener("scroll", updateTarget, { passive: true });
     window.addEventListener("resize", updateTarget);
 
-    // Update if content height changes (route change, async loads, etc.)
-    const ro = new ResizeObserver(() => updateTarget());
+    const ro = new ResizeObserver(updateTarget);
+    if (scroller === window) ro.observe(document.documentElement);
+    else ro.observe(scroller);
 
-    if (scroller === window) {
-      ro.observe(document.documentElement);
-    } else {
-      ro.observe(scroller);
-    }
-
-    // init
+    // start
     updateTarget();
 
     return () => {
@@ -69,8 +70,9 @@ export default function useScrollProgress() {
       window.removeEventListener("resize", updateTarget);
       ro.disconnect();
       if (raf.current) cancelAnimationFrame(raf.current);
+      raf.current = null;
     };
   }, []);
 
-  return progress; // 0..1
+  return state; // { progress: 0..1, scrollY: px }
 }

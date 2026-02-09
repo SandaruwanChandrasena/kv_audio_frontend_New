@@ -30,7 +30,7 @@ export default function FeaturedCategories() {
           <h2 className="text-xl font-semibold text-slate-900">
             Find your setup fast
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-blue-600 border p-1 rounded-xl bg-blue-100 inline-block mt-1">
             Choose a category to avoid overload.
           </p>
         </div>
